@@ -11,13 +11,13 @@ import People from "../classroom/People";
 
 const ClassroomDetail = ({ classroom }) => {
   const dispatch = useDispatch();
-  // const { selectedClassroom } = useSelector((state) => state.classroom);
   const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("classwork");
 
-  // const isTeacher = selectedClassroom?.teacherId === user?.id;
-  const isTeacher = true;
+  const isTeacher = classroom.role === "TEACHER";
+
   // console.log("CLASSROOM DETAIL RENDER");
+
   useEffect(() => {
     dispatch(fetchClassroomAssignments(classroom.id));
     // if (isTeacher) {

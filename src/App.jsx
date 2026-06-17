@@ -7,7 +7,7 @@ import {
   loadUserFromStorage,
 } from "./store/slices/authSlice";
 import Login from "./components/auth/Login";
-import SignUp from "./components/auth/SignUp";
+import SignUp from "./components/auth/Signup";
 import Dashboard from "./components/dashboard/Dashboard";
 
 const ProtectedRoute = ({ children }) => {

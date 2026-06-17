@@ -20,36 +20,26 @@ import { Navigate } from "react-router-dom";
 const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  // const { submissions } = useSelector((state) => state.assignment);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  // const userSubmission = submissions.find(
-  //   (sub) => sub.assignmentId === assignment.id && sub.studentId === user.id,
-  // );
-  console.log("assignment detail component", assignment);
+  const userSubmission = useSelector(
+    (state) => state.assignment.submissions[assignment.id] || null,
+  );
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedFiles(files);
+    setSelectedFiles([...selectedFiles, ...files]);
   };
 
   const handleSubmit = () => {
     if (selectedFiles.length > 0) {
-      const attachments = selectedFiles.map((file) => ({
-        id: Date.now().toString() + Math.random(),
-        name: file.name,
-        url: URL.createObjectURL(file),
-      }));
+      const formData = new FormData();
 
-      dispatch(
-        submitAssignment({
-          assignmentId: assignment.id,
-          classroomId: assignment.classroomId,
-          studentId: user.id,
-          studentName: user.name,
-          attachments: attachments,
-          dueDate: assignment.dueDate,
-        }),
-      );
+      selectedFiles.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      dispatch(submitAssignment(assignment.id, formData));
       setSelectedFiles([]);
     }
   };
@@ -86,7 +76,6 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
               </div>
             </div>
           </div>
-
           {/* Assignment Info */}
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="flex items-center space-x-2 bg-indigo-50 px-4 py-2 rounded-lg">
@@ -104,9 +93,7 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
               </div>
             )}
           </div>
-
           <Separator className="my-6" />
-
           {/* Instructions */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -116,7 +103,6 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
               {assignment.instructions}
             </p>
           </div>
-
           {/* Assignment Attachments */}
           {assignment.attachments && assignment.attachments.length > 0 && (
             <div className="mb-6">
@@ -139,9 +125,8 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
               </div>
             </div>
           )}
-
           {/* Student Submission Section */}
-          {/* {!isTeacher && (
+          {!isTeacher && (
             <>
               <Separator className="my-6" />
               <div>
@@ -154,19 +139,19 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
                     <div className="flex items-center space-x-2">
                       <div
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                          userSubmission.status === "on-time"
+                          userSubmission.status === "ONTIME"
                             ? "bg-green-50 text-green-700"
                             : "bg-orange-50 text-orange-700"
                         }`}
                       >
-                        {userSubmission.status === "on-time" ? (
+                        {userSubmission.status === "ONTIME" ? (
                           <Check className="h-5 w-5" />
                         ) : (
                           <Clock className="h-5 w-5" />
                         )}
                         <span className="font-medium">
                           Submitted{" "}
-                          {userSubmission.status === "on-time"
+                          {userSubmission.status === "ONTIME"
                             ? "on time"
                             : "late"}
                         </span>
@@ -184,12 +169,12 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
                         {userSubmission.attachments.map((file) => (
                           <button
                             key={file.id}
-                            onClick={() => openAttachment(file.url)}
+                            onClick={() => openAttachment(file.fileUrl)}
                             className="flex items-center space-x-3 p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors text-left"
                           >
                             <FileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
                             <span className="text-sm font-medium text-gray-900 truncate">
-                              {file.name}
+                              {file.fileName}
                             </span>
                           </button>
                         ))}
@@ -241,7 +226,7 @@ const AssignmentDetail = ({ assignment, isTeacher, onBack }) => {
                 )}
               </div>
             </>
-          )} */}
+          )}
         </CardContent>
       </Card>
     </div>
