@@ -1,22 +1,33 @@
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { FileText, Users, Check, X } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { mockUsers } from "../../utils/mockData";
+import { fetchSubmissionList } from "@/store/slices/submissionSlice";
 
 const Submissions = () => {
-  const { assignments, submissions } = useSelector((state) => state.assignment);
+  const { submissionList } = useSelector((state) => state.submissions);
   const { selectedClassroom } = useSelector((state) => state.classroom);
+
+  const assignmentSummary = useSelector(
+    (state) => state.assignment?.submissionSummary[selectedClassroom?.id] || {},
+  );
+
+  const assignments = assignmentSummary?.assignmentSummaryList || [];
+  const studentCount = assignmentSummary?.studentCount;
+
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const dispatch = useDispatch();
 
   const getSubmissionsForAssignment = (assignmentId) => {
-    return submissions.filter((sub) => sub.assignmentId === assignmentId);
+    if (submissionList[assignmentId]) return submissionList[assignmentId];
   };
 
-  const getStudentInfo = (studentId) => {
-    return mockUsers.find((user) => user.id === studentId);
-  };
+  useEffect(() => {
+    if (selectedAssignment)
+      dispatch(fetchSubmissionList(selectedAssignment?.id));
+  }, [selectedAssignment, dispatch]);
 
   const openAttachment = (url) => {
     window.open(url, "_blank");
@@ -24,15 +35,11 @@ const Submissions = () => {
 
   if (selectedAssignment) {
     const assignmentSubmissions = getSubmissionsForAssignment(
-      selectedAssignment.id,
+      selectedAssignment?.id,
     );
-    const allStudents = selectedClassroom.students;
-    const submittedStudentIds = assignmentSubmissions.map(
-      (sub) => sub.studentId,
-    );
-    const notSubmittedStudents = allStudents.filter(
-      (studentId) => !submittedStudentIds.includes(studentId),
-    );
+
+    const submittedStudents = assignmentSubmissions?.submitted || [];
+    const notSubmittedStudents = assignmentSubmissions?.notSubmitted || [];
 
     return (
       <div>
@@ -51,8 +58,7 @@ const Submissions = () => {
               </h2>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 <span>
-                  {assignmentSubmissions.length} / {allStudents.length}{" "}
-                  submitted
+                  {submittedStudents.length} / {studentCount} submitted
                 </span>
               </div>
             </div>
@@ -60,15 +66,15 @@ const Submissions = () => {
             <Separator className="my-4" />
 
             {/* Submitted Students */}
-            {assignmentSubmissions.length > 0 && (
+            {submittedStudents.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
                   <Check className="h-5 w-5 text-green-600" />
-                  <span>Submitted ({assignmentSubmissions.length})</span>
+                  <span>Submitted ({submittedStudents.length})</span>
                 </h3>
                 <div className="space-y-3">
-                  {assignmentSubmissions.map((submission) => {
-                    const student = getStudentInfo(submission.studentId);
+                  {submittedStudents.map((submission) => {
+                    // const student = getStudentInfo(submission.studentId);
                     return (
                       <div
                         key={submission.id}
@@ -77,7 +83,7 @@ const Submissions = () => {
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <p className="font-medium text-gray-900">
-                              {student?.name || submission.studentName}
+                              {submission.username}
                             </p>
                             <p className="text-sm text-gray-600">
                               Submitted:{" "}
@@ -87,12 +93,12 @@ const Submissions = () => {
                             </p>
                             <span
                               className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-                                submission.status === "on-time"
+                                submission.status === "ONTIME"
                                   ? "bg-green-100 text-green-700"
                                   : "bg-orange-100 text-orange-700"
                               }`}
                             >
-                              {submission.status === "on-time"
+                              {submission.status === "ONTIME"
                                 ? "On Time"
                                 : "Late"}
                             </span>
@@ -108,11 +114,11 @@ const Submissions = () => {
                                 {submission.attachments.map((file) => (
                                   <button
                                     key={file.id}
-                                    onClick={() => openAttachment(file.url)}
+                                    onClick={() => openAttachment(file.fileUrl)}
                                     className="flex items-center space-x-2 text-sm text-indigo-600 hover:text-indigo-700"
                                   >
                                     <FileText className="h-4 w-4" />
-                                    <span>{file.name}</span>
+                                    <span>{file.fileName}</span>
                                   </button>
                                 ))}
                               </div>
@@ -133,15 +139,15 @@ const Submissions = () => {
                   <span>Not Submitted ({notSubmittedStudents.length})</span>
                 </h3>
                 <div className="space-y-2">
-                  {notSubmittedStudents.map((studentId) => {
-                    const student = getStudentInfo(studentId);
+                  {notSubmittedStudents.map((student) => {
+                    // const student = getStudentInfo(studentId);
                     return (
                       <div
-                        key={studentId}
+                        key={student.id}
                         className="p-4 bg-orange-50 border border-orange-200 rounded-lg"
                       >
                         <p className="font-medium text-gray-900">
-                          {student?.name || "Unknown Student"}
+                          {student?.username || "Unknown Student"}
                         </p>
                         <p className="text-sm text-gray-600">
                           No submission yet
@@ -172,11 +178,6 @@ const Submissions = () => {
       ) : (
         <div className="grid gap-4">
           {assignments.map((assignment) => {
-            const assignmentSubmissions = getSubmissionsForAssignment(
-              assignment.id,
-            );
-            const totalStudents = selectedClassroom.students.length;
-
             return (
               <Card
                 key={assignment.id}
@@ -193,15 +194,13 @@ const Submissions = () => {
                         <div className="flex items-center space-x-2 text-gray-600">
                           <Users className="h-4 w-4" />
                           <span>
-                            {assignmentSubmissions.length} / {totalStudents}{" "}
-                            submitted
+                            {assignment.count} / {studentCount} submitted
                           </span>
                         </div>
                         <div className="text-gray-500">
-                          {totalStudents > 0
+                          {studentCount > 0
                             ? Math.round(
-                                (assignmentSubmissions.length / totalStudents) *
-                                  100,
+                                (assignment.count / studentCount) * 100,
                               )
                             : 0}
                           % completion
@@ -211,7 +210,7 @@ const Submissions = () => {
                     <div className="ml-4">
                       <div className="text-right">
                         <div className="text-2xl font-bold text-indigo-600">
-                          {assignmentSubmissions.length}
+                          {assignment.count}
                         </div>
                         <div className="text-xs text-gray-500">submissions</div>
                       </div>

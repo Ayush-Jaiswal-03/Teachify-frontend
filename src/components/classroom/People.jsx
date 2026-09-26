@@ -14,7 +14,6 @@ const People = () => {
     (state) => state.classroom.members[selectedClassroom?.id] || [],
   );
 
-  console.log("members", members);
   if (!selectedClassroom) return null;
 
   useEffect(() => {
@@ -24,7 +23,6 @@ const People = () => {
   const teacher = members?.find((user) => user.role === "TEACHER");
 
   const students = members?.filter((user) => user.role === "STUDENT");
-  console.log("students", students);
 
   return (
     <div>

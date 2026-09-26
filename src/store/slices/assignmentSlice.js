@@ -6,17 +6,16 @@ const initialState = {
     byClassroom: {},
     details: {},
     submissions: {},
+    submissionSummary: {},
     loading: false,
     error: null,
 };
-
 
 const assignmentSlice = createSlice({
     name: 'assignment',
     initialState,
     reducers: {
         setAssignments: (state, action) => {
-            // state.assignments = action.payload;
             const { classroomId, data } = action.payload;
             state.byClassroom[classroomId] = data;
         },
@@ -29,6 +28,10 @@ const assignmentSlice = createSlice({
             if (!state.submissions[assignmentId]) {
                 state.submissions[assignmentId] = data;
             }
+        },
+        setSubmissionSummary: (state, action) => {
+            const { classroomId, data } = action.payload;
+            state.submissionSummary[classroomId] = data;
         },
         addAssignment: (state, action) => {
             const { classroomId, data } = action.payload;
@@ -57,6 +60,7 @@ export const {
     setAssignments,
     setAssignmentDetail,
     setSubmissions,
+    setSubmissionSummary,
     addAssignment,
     addSubmission,
     setLoading,
@@ -115,8 +119,16 @@ export const createAssignment = (assignmentData, classroomId) => async (dispatch
     }
 };
 
-export const fetchClassroomSubmissions = (classroomId) => (dispatch) => {
+export const fetchAssignmentSummary = (classroomId) => async (dispatch) => {
     dispatch(setLoading(true));
+
+    try {
+        const response = await api.get(`/api/assignments/${classroomId}/summary`);
+        dispatch(setSubmissionSummary({ classroomId, data: response.data }));
+        dispatch(setLoading(false));
+    } catch (err) {
+        dispatch(clearAllErrors());
+    }
 
 };
 

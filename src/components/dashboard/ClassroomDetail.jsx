@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
+  fetchAssignmentSummary,
   fetchClassroomAssignments,
-  fetchClassroomSubmissions,
 } from "../../store/slices/assignmentSlice";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import Classwork from "../classroom/Classwork";
@@ -20,9 +20,9 @@ const ClassroomDetail = ({ classroom }) => {
 
   useEffect(() => {
     dispatch(fetchClassroomAssignments(classroom.id));
-    // if (isTeacher) {
-    //  dispatch(fetchClassroomSubmissions(selectedClassroom.id));
-    //   }
+    if (isTeacher) {
+      dispatch(fetchAssignmentSummary(classroom.id));
+    }
   }, [classroom, dispatch]);
 
   // useEffect(() => {
@@ -71,12 +71,12 @@ const ClassroomDetail = ({ classroom }) => {
         <TabsContent value="classwork" className="mt-6">
           <Classwork isTeacher={isTeacher} />
         </TabsContent>
-        {/* 
+
         {isTeacher && (
           <TabsContent value="submissions" className="mt-6">
             <Submissions />
           </TabsContent>
-        )} */}
+        )}
 
         <TabsContent value="people" className="mt-6">
           <People />
